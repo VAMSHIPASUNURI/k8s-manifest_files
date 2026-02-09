@@ -1,0 +1,36 @@
+name: Kubernetes Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'kubernates/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+
+      - name: Apply manifests
+        run: kubectl apply -f kubernates/
+
+# Notes:
+# - Store your kubeconfig content in the `KUBECONFIG` repository secret (raw kubeconfig file). If you store base64-encoded content, decode it first.
+# - For cloud-specific authentication prefer provider-specific actions (e.g., google-github-actions/auth, azure/login, aws-actions/configure-aws-credentials).

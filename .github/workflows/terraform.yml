@@ -1,0 +1,86 @@
+name: Terraform
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    env:
+      TF_WORKING_DIR: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform fmt
+        run: terraform fmt -check -diff
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform init
+        run: terraform init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform validate
+        run: terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -out=tfplan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Upload plan artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: ${{ env.TF_WORKING_DIR }}/tfplan
+
+  apply:
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      TF_WORKING_DIR: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve ${{ env.TF_WORKING_DIR }}/tfplan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+# Notes:
+# - Provide cloud provider credentials via repository secrets (e.g., AWS, AZURE, GCP). The workflow does not hardcode provider auth.
+# - For safety this workflow creates a plan on PRs and only applies on push to `main`.
