@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: dev
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      location / {
+        root /usr/share/nginx/html;
+        index index.html;
+      }
+      location /status {
+        return 200 "ok";
+      }
+    }
+  index.html: |
+    <html>
+    <head><title>NGINX Dev</title></head>
+    <body><h1>Welcome to NGINX (dev)</h1></body>
+    </html>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: test
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      location / {
+        root /usr/share/nginx/html;
+        index index.html;
+      }
+      location /status {
+        return 200 "ok";
+      }
+    }
+  index.html: |
+    <html>
+    <head><title>NGINX Test</title></head>
+    <body><h1>Welcome to NGINX (test)</h1></body>
+    </html>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: prod
+data:
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      location / {
+        root /usr/share/nginx/html;
+        index index.html;
+      }
+      location /status {
+        return 200 "ok";
+      }
+    }
+  index.html: |
+    <html>
+    <head><title>NGINX Prod</title></head>
+    <body><h1>Welcome to NGINX (prod)</h1></body>
+    </html>

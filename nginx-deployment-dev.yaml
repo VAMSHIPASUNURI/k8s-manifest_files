@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: dev
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      serviceAccountName: nginx-sa
+      containers:
+        - name: nginx
+          image: nginx:1.21
+          ports:
+            - containerPort: 80
+          env:
+            - name: NGINX_USER
+              valueFrom:
+                secretKeyRef:
+                  name: nginx-credentials
+                  key: username
+            - name: NGINX_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: nginx-credentials
+                  key: password
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+            - name: site-data
+              mountPath: /usr/share/nginx/html
+            - name: nginx-logs
+              mountPath: /var/log/nginx
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+        - name: site-data
+          persistentVolumeClaim:
+            claimName: nginx-pvc
+        - name: nginx-logs
+          emptyDir: {}

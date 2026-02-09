@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-sa
+  namespace: dev
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nginx-role
+  namespace: dev
+rules:
+  - apiGroups: [""]
+    resources: ["pods","services","endpoints","configmaps"]
+    verbs: ["get","list","watch","create","update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nginx-rolebinding
+  namespace: dev
+subjects:
+  - kind: ServiceAccount
+    name: nginx-sa
+    namespace: dev
+roleRef:
+  kind: Role
+  name: nginx-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Bind a cluster `view` role to the nginx service account in dev (cluster-level example)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nginx-sa-view-binding
+subjects:
+  - kind: ServiceAccount
+    name: nginx-sa
+    namespace: dev
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Create service accounts and rolebindings for test and prod namespaces (role names can be the same)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-sa
+  namespace: test
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nginx-role
+  namespace: test
+rules:
+  - apiGroups: [""]
+    resources: ["pods","services","endpoints"]
+    verbs: ["get","list","watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nginx-rolebinding
+  namespace: test
+subjects:
+  - kind: ServiceAccount
+    name: nginx-sa
+    namespace: test
+roleRef:
+  kind: Role
+  name: nginx-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nginx-sa
+  namespace: prod
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: nginx-role
+  namespace: prod
+rules:
+  - apiGroups: [""]
+    resources: ["pods","services","endpoints"]
+    verbs: ["get","list","watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: nginx-rolebinding
+  namespace: prod
+subjects:
+  - kind: ServiceAccount
+    name: nginx-sa
+    namespace: prod
+roleRef:
+  kind: Role
+  name: nginx-role
+  apiGroup: rbac.authorization.k8s.io
